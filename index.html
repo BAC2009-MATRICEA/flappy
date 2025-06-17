@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Flappy Dunk Easy</title>
   <style>
     html, body {
@@ -29,13 +29,21 @@
       color: white;
     }
 
-    #score {
+    #score, #highScore {
       position: absolute;
-      top: 10px;
       right: 10px;
       font-size: 24px;
       font-weight: bold;
       color: white;
+    }
+
+    #score {
+      top: 10px;
+    }
+
+    #highScore {
+      top: 40px;
+      font-size: 18px;
     }
 
     #gameOver {
@@ -64,6 +72,7 @@
 </div>
 
 <div id="score">Score: 0</div>
+<div id="highScore">High Score: 0</div>
 
 <div id="gameOver">
   <h1>Game Over</h1>
@@ -82,17 +91,25 @@
     y: canvas.height / 2,
     radius: 25,
     vy: 0,
-    gravity: 0.25,   // Slower gravity
+    gravity: 0.25,
     jump: -5.5,
     image: null
   };
 
   let pipes = [];
-  const pipeWidth = 40;         // Thinner bars
-  const gap = 200;              // Wider gap between bars
-  const pipeSpeed = 2.5;        // Slightly slower speed
+  const pipeWidth = 40;
+  const gap = 200;
+  const pipeSpeed = 2.5;
   let score = 0;
   let gameRunning = true;
+
+  // Local high score
+  let highScore = localStorage.getItem("flappyHighScore") || 0;
+  document.getElementById("highScore").innerText = `High Score: ${highScore}`;
+
+  function updateHighScoreDisplay() {
+    document.getElementById("highScore").innerText = `High Score: ${highScore}`;
+  }
 
   function spawnPipe() {
     const topHeight = Math.random() * (canvas.height - gap - 150) + 50;
@@ -152,7 +169,6 @@
     ball.y += ball.vy;
     drawBall();
 
-    // Pipe logic
     pipes.forEach(pipe => pipe.x -= pipeSpeed);
 
     if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
@@ -162,7 +178,6 @@
     pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
     drawPipes();
 
-    // Collision
     for (let pipe of pipes) {
       if (
         ball.x + ball.radius > pipe.x &&
@@ -192,6 +207,11 @@
   }
 
   function endGame() {
+    if (score > highScore) {
+      highScore = score;
+      localStorage.setItem("flappyHighScore", highScore);
+      updateHighScoreDisplay();
+    }
     gameRunning = false;
     document.getElementById("gameOver").style.display = "block";
   }
@@ -204,6 +224,7 @@
     gameRunning = true;
     document.getElementById("gameOver").style.display = "none";
     drawScore();
+    updateHighScoreDisplay();
     update();
   }
 
