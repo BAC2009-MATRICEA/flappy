@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Flappy Dunk Easy</title>
   <style>
     html, body {
@@ -11,20 +11,16 @@
       overflow: hidden;
       background: #222;
       font-family: sans-serif;
-      touch-action: none;
     }
 
-    canvas {
-      display: block;
-      background: #222;
-    }
-
-    #controls, #score, #gameOver {
+    #gameCanvas {
       position: absolute;
-      z-index: 10;
+      top: 0;
+      left: 0;
     }
 
     #controls {
+      position: absolute;
       top: 10px;
       left: 10px;
       background: rgba(0, 0, 0, 0.5);
@@ -34,6 +30,7 @@
     }
 
     #score {
+      position: absolute;
       top: 10px;
       right: 10px;
       font-size: 24px;
@@ -42,6 +39,7 @@
     }
 
     #gameOver {
+      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -69,20 +67,14 @@
 
 <div id="gameOver">
   <h1>Game Over</h1>
-  <button onclick="restartGame()">Restart</button>
+  <button id="restartButton">Restart</button>
 </div>
 
 <script>
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
-
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-  }
-
-  window.addEventListener("resize", resizeCanvas);
-  resizeCanvas();
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
 
   let ball = {
     x: 100,
@@ -117,6 +109,7 @@
       ctx.save();
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.closePath();
       ctx.clip();
       ctx.drawImage(ball.image, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
       ctx.restore();
@@ -130,10 +123,10 @@
 
   function drawPipes() {
     ctx.fillStyle = "lime";
-    for (const pipe of pipes) {
+    pipes.forEach(pipe => {
       ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
       ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-    }
+    });
   }
 
   function drawScore() {
@@ -160,6 +153,7 @@
     drawBall();
 
     pipes.forEach(pipe => pipe.x -= pipeSpeed);
+
     if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
       spawnPipe();
     }
@@ -167,7 +161,7 @@
     pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
     drawPipes();
 
-    for (const pipe of pipes) {
+    for (let pipe of pipes) {
       if (
         ball.x + ball.radius > pipe.x &&
         ball.x - ball.radius < pipe.x + pipeWidth &&
@@ -211,20 +205,14 @@
     update();
   }
 
-  // Controls for both touch and mouse
-  function setupControls() {
-    const jumpHandler = e => {
-      e.preventDefault(); // Prevent double-tap zoom
-      jump();
-    };
-    document.addEventListener("touchstart", jumpHandler, { passive: false });
-    document.addEventListener("mousedown", jumpHandler);
-    document.addEventListener("keydown", e => {
-      if (e.code === "Space") jump();
-    });
-  }
+  // 👇 THIS is what makes the button actually work
+  document.getElementById("restartButton").addEventListener("click", restartGame);
 
-  // Image uploads
+  document.addEventListener("click", jump);
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space") jump();
+  });
+
   document.getElementById("ballImage").addEventListener("change", e => {
     const file = e.target.files[0];
     if (file) {
@@ -243,7 +231,6 @@
     }
   });
 
-  setupControls();
   update();
 </script>
 
