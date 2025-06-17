@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy Dunk Easy</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      background: #222;
+      font-family: sans-serif;
+    }
+
+    #gameCanvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+
+    #controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 10px;
+      color: white;
+    }
+
+    #score {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+    }
+
+    #gameOver {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: none;
+      color: white;
+    }
+
+    #gameOver button {
+      padding: 10px 20px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="controls">
+  <label>Ball Image<br><input type="file" id="ballImage"></label><br><br>
+  <label>Background Image<br><input type="file" id="bgImage"></label>
+</div>
+
+<div id="score">Score: 0</div>
+
+<div id="gameOver">
+  <h1>Game Over</h1>
+  <button onclick="restartGame()">Restart</button>
+</div>
+
+<script>
+  const canvas = document.getElementById("gameCanvas");
+  const ctx = canvas.getContext("2d");
+
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+
+  let ball = {
+    x: 100,
+    y: canvas.height / 2,
+    radius: 25,
+    vy: 0,
+    gravity: 0.25,   // Slower gravity
+    jump: -5.5,
+    image: null
+  };
+
+  let pipes = [];
+  const pipeWidth = 40;         // Thinner bars
+  const gap = 200;              // Wider gap between bars
+  const pipeSpeed = 2.5;        // Slightly slower speed
+  let score = 0;
+  let gameRunning = true;
+
+  function spawnPipe() {
+    const topHeight = Math.random() * (canvas.height - gap - 150) + 50;
+    pipes.push({
+      x: canvas.width,
+      top: topHeight,
+      bottom: topHeight + gap,
+      passed: false
+    });
+  }
+
+  function drawBall() {
+    if (ball.image) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(ball.image, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
+      ctx.restore();
+    } else {
+      ctx.fillStyle = "white";
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function drawPipes() {
+    ctx.fillStyle = "lime";
+    pipes.forEach(pipe => {
+      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+      ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
+    });
+  }
+
+  function drawScore() {
+    document.getElementById("score").innerText = `Score: ${score}`;
+  }
+
+  function drawBackground() {
+    if (bgImage) {
+      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+    } else {
+      ctx.fillStyle = "#222";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+  }
+
+  function update() {
+    if (!gameRunning) return;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+
+    ball.vy += ball.gravity;
+    ball.y += ball.vy;
+    drawBall();
+
+    // Pipe logic
+    pipes.forEach(pipe => pipe.x -= pipeSpeed);
+
+    if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
+      spawnPipe();
+    }
+
+    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+    drawPipes();
+
+    // Collision
+    for (let pipe of pipes) {
+      if (
+        ball.x + ball.radius > pipe.x &&
+        ball.x - ball.radius < pipe.x + pipeWidth &&
+        (ball.y - ball.radius < pipe.top || ball.y + ball.radius > pipe.bottom)
+      ) {
+        return endGame();
+      }
+
+      if (!pipe.passed && pipe.x + pipeWidth < ball.x) {
+        pipe.passed = true;
+        score++;
+        drawScore();
+      }
+    }
+
+    if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+      return endGame();
+    }
+
+    requestAnimationFrame(update);
+  }
+
+  function jump() {
+    if (!gameRunning) return;
+    ball.vy = ball.jump;
+  }
+
+  function endGame() {
+    gameRunning = false;
+    document.getElementById("gameOver").style.display = "block";
+  }
+
+  function restartGame() {
+    ball.y = canvas.height / 2;
+    ball.vy = 0;
+    pipes = [];
+    score = 0;
+    gameRunning = true;
+    document.getElementById("gameOver").style.display = "none";
+    drawScore();
+    update();
+  }
+
+  document.addEventListener("click", jump);
+  document.addEventListener("keydown", e => {
+    if (e.code === "Space") jump();
+  });
+
+  // Image loading
+  let bgImage = null;
+
+  document.getElementById("ballImage").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) {
+      const img = new Image();
+      img.onload = () => ball.image = img;
+      img.src = URL.createObjectURL(file);
+    }
+  });
+
+  document.getElementById("bgImage").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (file) {
+      const img = new Image();
+      img.onload = () => bgImage = img;
+      img.src = URL.createObjectURL(file);
+    }
+  });
+
+  update();
+</script>
+
+</body>
+</html>
