@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Flappy Dunk Easy</title>
   <style>
     html, body {
@@ -11,16 +11,20 @@
       overflow: hidden;
       background: #222;
       font-family: sans-serif;
+      touch-action: none;
     }
 
-    #gameCanvas {
+    canvas {
+      display: block;
+      background: #222;
+    }
+
+    #controls, #score, #gameOver {
       position: absolute;
-      top: 0;
-      left: 0;
+      z-index: 10;
     }
 
     #controls {
-      position: absolute;
       top: 10px;
       left: 10px;
       background: rgba(0, 0, 0, 0.5);
@@ -30,7 +34,6 @@
     }
 
     #score {
-      position: absolute;
       top: 10px;
       right: 10px;
       font-size: 24px;
@@ -39,7 +42,6 @@
     }
 
     #gameOver {
-      position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
@@ -74,25 +76,31 @@
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+
+  window.addEventListener("resize", resizeCanvas);
+  resizeCanvas();
 
   let ball = {
     x: 100,
     y: canvas.height / 2,
     radius: 25,
     vy: 0,
-    gravity: 0.25,   // Slower gravity
+    gravity: 0.25,
     jump: -5.5,
     image: null
   };
 
   let pipes = [];
-  const pipeWidth = 40;         // Thinner bars
-  const gap = 200;              // Wider gap between bars
-  const pipeSpeed = 2.5;        // Slightly slower speed
+  const pipeWidth = 40;
+  const gap = 200;
+  const pipeSpeed = 2.5;
   let score = 0;
   let gameRunning = true;
+  let bgImage = null;
 
   function spawnPipe() {
     const topHeight = Math.random() * (canvas.height - gap - 150) + 50;
@@ -109,7 +117,6 @@
       ctx.save();
       ctx.beginPath();
       ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-      ctx.closePath();
       ctx.clip();
       ctx.drawImage(ball.image, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
       ctx.restore();
@@ -123,10 +130,10 @@
 
   function drawPipes() {
     ctx.fillStyle = "lime";
-    pipes.forEach(pipe => {
+    for (const pipe of pipes) {
       ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
       ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-    });
+    }
   }
 
   function drawScore() {
@@ -152,9 +159,7 @@
     ball.y += ball.vy;
     drawBall();
 
-    // Pipe logic
     pipes.forEach(pipe => pipe.x -= pipeSpeed);
-
     if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
       spawnPipe();
     }
@@ -162,8 +167,7 @@
     pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
     drawPipes();
 
-    // Collision
-    for (let pipe of pipes) {
+    for (const pipe of pipes) {
       if (
         ball.x + ball.radius > pipe.x &&
         ball.x - ball.radius < pipe.x + pipeWidth &&
@@ -207,14 +211,20 @@
     update();
   }
 
-  document.addEventListener("click", jump);
-  document.addEventListener("keydown", e => {
-    if (e.code === "Space") jump();
-  });
+  // Controls for both touch and mouse
+  function setupControls() {
+    const jumpHandler = e => {
+      e.preventDefault(); // Prevent double-tap zoom
+      jump();
+    };
+    document.addEventListener("touchstart", jumpHandler, { passive: false });
+    document.addEventListener("mousedown", jumpHandler);
+    document.addEventListener("keydown", e => {
+      if (e.code === "Space") jump();
+    });
+  }
 
-  // Image loading
-  let bgImage = null;
-
+  // Image uploads
   document.getElementById("ballImage").addEventListener("change", e => {
     const file = e.target.files[0];
     if (file) {
@@ -233,6 +243,7 @@
     }
   });
 
+  setupControls();
   update();
 </script>
 
