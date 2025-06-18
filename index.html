@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Flappy Dunk Easy</title>
   <style>
     html, body {
@@ -27,6 +27,7 @@
       padding: 10px;
       border-radius: 10px;
       color: white;
+      z-index: 10;
     }
 
     #score, #highScore {
@@ -35,6 +36,7 @@
       font-size: 24px;
       font-weight: bold;
       color: white;
+      z-index: 10;
     }
 
     #score {
@@ -54,6 +56,7 @@
       text-align: center;
       display: none;
       color: white;
+      z-index: 10;
     }
 
     #gameOver button {
@@ -67,8 +70,8 @@
 <canvas id="gameCanvas"></canvas>
 
 <div id="controls">
-  <label>Ball Image<br><input type="file" id="ballImage"></label><br><br>
-  <label>Background Image<br><input type="file" id="bgImage"></label>
+  <label>Ball Image<br /><input type="file" id="ballImage" accept="image/*" /></label><br /><br />
+  <label>Background Image<br /><input type="file" id="bgImage" accept="image/*" /></label>
 </div>
 
 <div id="score">Score: 0</div>
@@ -83,8 +86,12 @@
   const canvas = document.getElementById("gameCanvas");
   const ctx = canvas.getContext("2d");
 
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+  }
+  resizeCanvas();
+  window.addEventListener("resize", resizeCanvas);
 
   let ball = {
     x: 100,
@@ -93,7 +100,7 @@
     vy: 0,
     gravity: 0.25,
     jump: -5.5,
-    image: null
+    image: null,
   };
 
   let pipes = [];
@@ -117,7 +124,7 @@
       x: canvas.width,
       top: topHeight,
       bottom: topHeight + gap,
-      passed: false
+      passed: false,
     });
   }
 
@@ -140,7 +147,7 @@
 
   function drawPipes() {
     ctx.fillStyle = "lime";
-    pipes.forEach(pipe => {
+    pipes.forEach((pipe) => {
       ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
       ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
     });
@@ -149,6 +156,9 @@
   function drawScore() {
     document.getElementById("score").innerText = `Score: ${score}`;
   }
+
+  // Background image
+  let bgImage = null;
 
   function drawBackground() {
     if (bgImage) {
@@ -169,13 +179,13 @@
     ball.y += ball.vy;
     drawBall();
 
-    pipes.forEach(pipe => pipe.x -= pipeSpeed);
+    pipes.forEach((pipe) => (pipe.x -= pipeSpeed));
 
     if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
       spawnPipe();
     }
 
-    pipes = pipes.filter(pipe => pipe.x + pipeWidth > 0);
+    pipes = pipes.filter((pipe) => pipe.x + pipeWidth > 0);
     drawPipes();
 
     for (let pipe of pipes) {
@@ -229,28 +239,63 @@
   }
 
   document.addEventListener("click", jump);
-  document.addEventListener("keydown", e => {
+  document.addEventListener("keydown", (e) => {
     if (e.code === "Space") jump();
   });
 
-  // Image loading
-  let bgImage = null;
+  // Load saved images from localStorage on startup
+  window.addEventListener("load", () => {
+    const savedBallData = localStorage.getItem("flappyBallImage");
+    const savedBgData = localStorage.getItem("flappyBgImage");
 
-  document.getElementById("ballImage").addEventListener("change", e => {
-    const file = e.target.files[0];
-    if (file) {
+    if (savedBallData) {
       const img = new Image();
-      img.onload = () => ball.image = img;
-      img.src = URL.createObjectURL(file);
+      img.onload = () => {
+        ball.image = img;
+      };
+      img.src = savedBallData;
+    }
+
+    if (savedBgData) {
+      const img = new Image();
+      img.onload = () => {
+        bgImage = img;
+      };
+      img.src = savedBgData;
     }
   });
 
-  document.getElementById("bgImage").addEventListener("change", e => {
+  // When user selects ball image, convert and save it
+  document.getElementById("ballImage").addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file) {
-      const img = new Image();
-      img.onload = () => bgImage = img;
-      img.src = URL.createObjectURL(file);
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const base64 = event.target.result;
+        localStorage.setItem("flappyBallImage", base64);
+
+        const img = new Image();
+        img.onload = () => (ball.image = img);
+        img.src = base64;
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // When user selects background image, convert and save it
+  document.getElementById("bgImage").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = function (event) {
+        const base64 = event.target.result;
+        localStorage.setItem("flappyBgImage", base64);
+
+        const img = new Image();
+        img.onload = () => (bgImage = img);
+        img.src = base64;
+      };
+      reader.readAsDataURL(file);
     }
   });
 
