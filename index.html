@@ -1,306 +1,270 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html><html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Flappy Dunk Easy</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MyFlappy</title>
   <style>
     html, body {
       margin: 0;
       padding: 0;
       overflow: hidden;
-      background: #222;
+      background: #000;
       font-family: sans-serif;
     }
-
-    #gameCanvas {
-      position: absolute;
-      top: 0;
-      left: 0;
+    canvas {
+      display: block;
     }
-
     #controls {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(0, 0, 0, 0.6);
       padding: 10px;
       border-radius: 10px;
       color: white;
       z-index: 10;
     }
-
+    #shareBtn {
+      margin-top: 10px;
+    }
     #score, #highScore {
       position: absolute;
       right: 10px;
-      font-size: 24px;
-      font-weight: bold;
+      font-size: 20px;
       color: white;
-      z-index: 10;
+      font-weight: bold;
     }
-
     #score {
       top: 10px;
     }
-
     #highScore {
       top: 40px;
-      font-size: 18px;
     }
-
     #gameOver {
       position: absolute;
       top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      text-align: center;
       display: none;
       color: white;
-      z-index: 10;
+      text-align: center;
+      z-index: 20;
     }
-
     #gameOver button {
+      margin-top: 10px;
       padding: 10px 20px;
-      font-size: 16px;
     }
   </style>
 </head>
 <body>
-
-<canvas id="gameCanvas"></canvas>
-
-<div id="controls">
-  <label>Ball Image<br /><input type="file" id="ballImage" accept="image/*" /></label><br /><br />
-  <label>Background Image<br /><input type="file" id="bgImage" accept="image/*" /></label>
-</div>
-
-<div id="score">Score: 0</div>
-<div id="highScore">High Score: 0</div>
-
-<div id="gameOver">
-  <h1>Game Over</h1>
-  <button onclick="restartGame()">Restart</button>
-</div>
-
-<script>
-  const canvas = document.getElementById("gameCanvas");
-  const ctx = canvas.getContext("2d");
-
-  function resizeCanvas() {
+  <canvas id="gameCanvas"></canvas>  <div id="controls">
+    <label>Ball Image<input type="file" id="ballImageInput"></label><br>
+    <label>Background Image<input type="file" id="bgImageInput"></label><br>
+    <button id="shareBtn">Share Game</button>
+  </div>  <div id="score">Score: 0</div>
+  <div id="highScore">High Score: 0</div>  <div id="gameOver">
+    <h1>Game Over</h1>
+    <button onclick="restartGame()">Restart</button>
+  </div>  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
-  }
-  resizeCanvas();
-  window.addEventListener("resize", resizeCanvas);
 
-  let ball = {
-    x: 100,
-    y: canvas.height / 2,
-    radius: 25,
-    vy: 0,
-    gravity: 0.25,
-    jump: -5.5,
-    image: null,
-  };
+    const clientId = 'c31f0d74194fff4';
+    let bgImage = null;
+    let ballImage = null;
 
-  let pipes = [];
-  const pipeWidth = 40;
-  const gap = 200;
-  const pipeSpeed = 2.5;
-  let score = 0;
-  let gameRunning = true;
+    const ball = {
+      x: 100,
+      y: canvas.height / 2,
+      vy: 0,
+      radius: 25,
+      gravity: 0.25,
+      jump: -5.5,
+    };
 
-  // Local high score
-  let highScore = localStorage.getItem("flappyHighScore") || 0;
-  document.getElementById("highScore").innerText = `High Score: ${highScore}`;
-
-  function updateHighScoreDisplay() {
+    let pipes = [];
+    let score = 0;
+    let highScore = localStorage.getItem('flappyHighScore') || 0;
     document.getElementById("highScore").innerText = `High Score: ${highScore}`;
-  }
 
-  function spawnPipe() {
-    const topHeight = Math.random() * (canvas.height - gap - 150) + 50;
-    pipes.push({
-      x: canvas.width,
-      top: topHeight,
-      bottom: topHeight + gap,
-      passed: false,
-    });
-  }
-
-  function drawBall() {
-    if (ball.image) {
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-      ctx.closePath();
-      ctx.clip();
-      ctx.drawImage(ball.image, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = "white";
-      ctx.beginPath();
-      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
-      ctx.fill();
-    }
-  }
-
-  function drawPipes() {
-    ctx.fillStyle = "lime";
-    pipes.forEach((pipe) => {
-      ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
-      ctx.fillRect(pipe.x, pipe.bottom, pipeWidth, canvas.height - pipe.bottom);
-    });
-  }
-
-  function drawScore() {
-    document.getElementById("score").innerText = `Score: ${score}`;
-  }
-
-  // Background image
-  let bgImage = null;
-
-  function drawBackground() {
-    if (bgImage) {
-      ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
-    } else {
-      ctx.fillStyle = "#222";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-    }
-  }
-
-  function update() {
-    if (!gameRunning) return;
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawBackground();
-
-    ball.vy += ball.gravity;
-    ball.y += ball.vy;
-    drawBall();
-
-    pipes.forEach((pipe) => (pipe.x -= pipeSpeed));
-
-    if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) {
-      spawnPipe();
+    function updateHighScore() {
+      document.getElementById("highScore").innerText = `High Score: ${highScore}`;
     }
 
-    pipes = pipes.filter((pipe) => pipe.x + pipeWidth > 0);
-    drawPipes();
-
-    for (let pipe of pipes) {
-      if (
-        ball.x + ball.radius > pipe.x &&
-        ball.x - ball.radius < pipe.x + pipeWidth &&
-        (ball.y - ball.radius < pipe.top || ball.y + ball.radius > pipe.bottom)
-      ) {
-        return endGame();
-      }
-
-      if (!pipe.passed && pipe.x + pipeWidth < ball.x) {
-        pipe.passed = true;
-        score++;
-        drawScore();
+    function drawBall() {
+      if (ballImage) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(ballImage, ball.x - ball.radius, ball.y - ball.radius, ball.radius * 2, ball.radius * 2);
+        ctx.restore();
+      } else {
+        ctx.fillStyle = "white";
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+        ctx.fill();
       }
     }
 
-    if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
-      return endGame();
+    function drawPipes() {
+      ctx.fillStyle = "lime";
+      pipes.forEach(p => {
+        ctx.fillRect(p.x, 0, 40, p.top);
+        ctx.fillRect(p.x, p.bottom, 40, canvas.height - p.bottom);
+      });
     }
 
-    requestAnimationFrame(update);
-  }
-
-  function jump() {
-    if (!gameRunning) return;
-    ball.vy = ball.jump;
-  }
-
-  function endGame() {
-    if (score > highScore) {
-      highScore = score;
-      localStorage.setItem("flappyHighScore", highScore);
-      updateHighScoreDisplay();
+    function drawBackground() {
+      if (bgImage) {
+        ctx.drawImage(bgImage, 0, 0, canvas.width, canvas.height);
+      } else {
+        ctx.fillStyle = "#000";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
     }
-    gameRunning = false;
-    document.getElementById("gameOver").style.display = "block";
-  }
 
-  function restartGame() {
-    ball.y = canvas.height / 2;
-    ball.vy = 0;
-    pipes = [];
-    score = 0;
-    gameRunning = true;
-    document.getElementById("gameOver").style.display = "none";
-    drawScore();
-    updateHighScoreDisplay();
+    function drawScore() {
+      document.getElementById("score").innerText = `Score: ${score}`;
+    }
+
+    function spawnPipe() {
+      let top = Math.random() * (canvas.height - 250) + 50;
+      pipes.push({ x: canvas.width, top: top, bottom: top + 200, passed: false });
+    }
+
+    function update() {
+      if (!gameRunning) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+
+      ball.vy += ball.gravity;
+      ball.y += ball.vy;
+      drawBall();
+
+      pipes.forEach(p => p.x -= 2.5);
+      if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 250) spawnPipe();
+      pipes = pipes.filter(p => p.x + 40 > 0);
+      drawPipes();
+
+      for (let p of pipes) {
+        if (
+          ball.x + ball.radius > p.x &&
+          ball.x - ball.radius < p.x + 40 &&
+          (ball.y - ball.radius < p.top || ball.y + ball.radius > p.bottom)
+        ) return endGame();
+
+        if (!p.passed && p.x + 40 < ball.x) {
+          p.passed = true;
+          score++;
+          drawScore();
+        }
+      }
+
+      if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) return endGame();
+
+      requestAnimationFrame(update);
+    }
+
+    function endGame() {
+      gameRunning = false;
+      if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('flappyHighScore', highScore);
+        updateHighScore();
+      }
+      document.getElementById("gameOver").style.display = "block";
+    }
+
+    function restartGame() {
+      ball.y = canvas.height / 2;
+      ball.vy = 0;
+      pipes = [];
+      score = 0;
+      gameRunning = true;
+      document.getElementById("gameOver").style.display = "none";
+      drawScore();
+      update();
+    }
+
+    document.addEventListener("click", () => gameRunning && (ball.vy = ball.jump));
+    document.addEventListener("keydown", e => e.code === 'Space' && (ball.vy = ball.jump));
+
+    let gameRunning = true;
     update();
-  }
 
-  document.addEventListener("click", jump);
-  document.addEventListener("keydown", (e) => {
-    if (e.code === "Space") jump();
-  });
+    function uploadToImgur(file, callback) {
+      const form = new FormData();
+      form.append("image", file);
 
-  // Load saved images from localStorage on startup
-  window.addEventListener("load", () => {
-    const savedBallData = localStorage.getItem("flappyBallImage");
-    const savedBgData = localStorage.getItem("flappyBgImage");
-
-    if (savedBallData) {
-      const img = new Image();
-      img.onload = () => {
-        ball.image = img;
-      };
-      img.src = savedBallData;
+      fetch("https://api.imgur.com/3/image", {
+        method: "POST",
+        headers: { Authorization: `Client-ID ${clientId}` },
+        body: form,
+      })
+        .then(res => res.json())
+        .then(data => callback(data.data.link))
+        .catch(() => alert("Image upload failed"));
     }
 
-    if (savedBgData) {
-      const img = new Image();
-      img.onload = () => {
-        bgImage = img;
-      };
-      img.src = savedBgData;
-    }
-  });
-
-  // When user selects ball image, convert and save it
-  document.getElementById("ballImage").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    document.getElementById("ballImageInput").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
-      reader.onload = function (event) {
-        const base64 = event.target.result;
-        localStorage.setItem("flappyBallImage", base64);
-
-        const img = new Image();
-        img.onload = () => (ball.image = img);
-        img.src = base64;
+      reader.onload = () => {
+        ballImage = new Image();
+        ballImage.src = reader.result;
+        localStorage.setItem("ballImage", reader.result);
       };
       reader.readAsDataURL(file);
-    }
-  });
+    });
 
-  // When user selects background image, convert and save it
-  document.getElementById("bgImage").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (file) {
+    document.getElementById("bgImageInput").addEventListener("change", e => {
+      const file = e.target.files[0];
+      if (!file) return;
       const reader = new FileReader();
-      reader.onload = function (event) {
-        const base64 = event.target.result;
-        localStorage.setItem("flappyBgImage", base64);
-
-        const img = new Image();
-        img.onload = () => (bgImage = img);
-        img.src = base64;
+      reader.onload = () => {
+        bgImage = new Image();
+        bgImage.src = reader.result;
+        localStorage.setItem("bgImage", reader.result);
       };
       reader.readAsDataURL(file);
-    }
-  });
+    });
 
-  update();
-</script>
+    window.onload = () => {
+      const bg = localStorage.getItem("bgImage");
+      if (bg) {
+        bgImage = new Image();
+        bgImage.src = bg;
+      }
+      const ball = localStorage.getItem("ballImage");
+      if (ball) {
+        ballImage = new Image();
+        ballImage.src = ball;
+      }
+    };
 
-</body>
+    document.getElementById("shareBtn").onclick = async () => {
+      const ballData = localStorage.getItem("ballImage");
+      const bgData = localStorage.getItem("bgImage");
+
+      const uploadAndGetUrl = (dataUrl) => fetch(dataUrl)
+        .then(res => res.blob())
+        .then(blob => new Promise(resolve => uploadToImgur(blob, resolve)));
+
+      const ballUrl = ballData ? await uploadAndGetUrl(ballData) : "";
+      const bgUrl = bgData ? await uploadAndGetUrl(bgData) : "";
+
+      const link = `${location.origin}${location.pathname}?ball=${encodeURIComponent(ballUrl)}&bg=${encodeURIComponent(bgUrl)}`;
+
+      try {
+        await navigator.clipboard.writeText(link);
+        alert("Link copied to clipboard!");
+      } catch {
+        alert("Copy failed. Here's the link:\n" + link);
+      }
+    };
+  </script></body>
 </html>
