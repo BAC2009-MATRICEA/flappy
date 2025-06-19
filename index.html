@@ -176,6 +176,11 @@
         updateHighScore();
       }
       document.getElementById("gameOver").style.display = "block";
+// 👇 Inject popunder script here
+  const popAd = document.createElement('script');
+  popAd.src = "//pl26955939.profitableratecpm.com/a7/ae/1f/a7ae1f9ab6e2a3ede30f85f36185e1d6.js";
+  popAd.type = "text/javascript";
+  document.body.appendChild(popAd);
     }
 
     function restartGame() {
