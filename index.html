@@ -57,6 +57,34 @@
   </style>
 </head>
 <body>
+<!-- TOP BANNER AD -->
+<div id="topBanner" style="position: fixed; top: 0; left: 50%; transform: translateX(-50%); z-index: 9999; width: 300px; height: 250px;"></div>
+
+<style>
+  body {
+    margin: 0;
+    padding-top: 260px; /* reserve space for 250px banner */
+    overflow: hidden;
+  }
+</style>
+
+<script type="text/javascript">
+  const topBanner = document.getElementById("topBanner");
+
+  const atOptions = {
+    'key' : 'c454bb50383f7cef9c4f7983f0af9662',
+    'format' : 'iframe',
+    'height' : 250,
+    'width' : 300,
+    'params' : {}
+  };
+
+  const adScript = document.createElement('script');
+  adScript.type = 'text/javascript';
+  adScript.src = '//www.highperformanceformat.com/c454bb50383f7cef9c4f7983f0af9662/invoke.js';
+
+  topBanner.appendChild(adScript);
+</script>
   <canvas id="gameCanvas"></canvas>  <div id="controls">
     <label>Ball Image<input type="file" id="ballImageInput"></label><br>
     <label>Background Image<input type="file" id="bgImageInput"></label><br>
