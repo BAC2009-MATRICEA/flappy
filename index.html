@@ -57,7 +57,40 @@
   </style>
 </head>
 <body>
+<!-- TOP BANNER AD -->
+<!-- TOP BANNER AD with Close Button -->
+<div id="adWrapper"
+     style="position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 60px;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.6);">
+  <div style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-size: 24px; color: white;" onclick="closeAd()">×</div>
+  <div id="container-e52e66db0db7b03f1eb96f5522a29fc9"></div>
+</div>
 
+<!-- Add padding to body so game isn't hidden behind ad -->
+<style>
+  body {
+    padding-top: 60px;
+  }
+</style>
+
+<script>
+  function closeAd() {
+    const ad = document.getElementById('adWrapper');
+    ad.style.display = 'none';
+    document.body.style.paddingTop = '0';
+  }
+</script>
+<script async="async" data-cfasync="false"
+        src="https://pl26956373.profitableratecpm.com/e52e66db0db7b03f1eb96f5522a29fc9/invoke.js">
+</script>
   <canvas id="gameCanvas"></canvas>  <div id="controls">
     <label>Ball Image<input type="file" id="ballImageInput"></label><br>
     <label>Background Image<input type="file" id="bgImageInput"></label><br>
