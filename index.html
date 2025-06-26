@@ -70,8 +70,11 @@
             justify-content: center;
             align-items: center;
             background: rgba(0, 0, 0, 0.6);">
-  <div style="position: absolute; right: 10px; top: 5px; cursor: pointer; font-size: 24px; color: white;" onclick="closeAd()">×</div>
-  <div id="container-e52e66db0db7b03f1eb96f5522a29fc9"></div>
+  <div style="flex: 1; text-align: right; padding-right: 10px; position: absolute; top: 5px; right: 10px; z-index: 10000;">
+    <span style="cursor: pointer; font-size: 24px; color: white;" onclick="closeAd()">×</span>
+  </div>
+  <!-- Injected Ad Container -->
+  <div id="container-e52e66db0db7b03f1eb96f5522a29fc9" style="width: 468px; height: 60px;"></div>
 </div>
 
 <!-- Add padding to body so game isn't hidden behind ad -->
@@ -88,6 +91,8 @@
     document.body.style.paddingTop = '0';
   }
 </script>
+
+<!-- Ad Script (loads into #container-e52e66db0db7b03f1eb96f5522a29fc9) -->
 <script async="async" data-cfasync="false"
         src="https://pl26956373.profitableratecpm.com/e52e66db0db7b03f1eb96f5522a29fc9/invoke.js">
 </script>
